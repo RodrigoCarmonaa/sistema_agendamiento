@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Agendamiento</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px auto; max-width: 800px; }
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        input, button { margin: 5px 0 15px 0; padding: 8px; width: 100%; box-sizing: border-box; display: block; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: #dc3545; font-weight: bold; padding: 10px; border: 1px solid #dc3545; background-color: #f8d7da; }
+        .success { color: #28a745; font-weight: bold; padding: 10px; border: 1px solid #28a745; background-color: #d4edda; }
+    </style>
+</head>
+<body>
+    <h1>Agenda de Citas</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="/agendar" method="POST">
+        <label for="descripcion">Descripción de la cita:</label>
+        <input type="text" id="descripcion" name="descripcion" placeholder="Ej. Reunión cliente A" required>
+
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha" required>
+
+        <label for="hora">Hora:</label>
+        <input type="time" id="hora" name="hora" required>
+
+        <button type="submit">Guardar Cita</button>
+    </form>
+
+    <hr>
+
+    <h2>Citas Programadas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cita in citas %}
+            <tr>
+                <td>{{ cita.fecha }}</td>
+                <td>{{ cita.hora }}</td>
+                <td>{{ cita.descripcion }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No hay citas programadas aún. El calendario está libre.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
