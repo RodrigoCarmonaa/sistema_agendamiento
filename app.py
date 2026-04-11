@@ -16,9 +16,12 @@ def index():
 @app.route('/agendar', methods=['POST'])
 def agendar():
     # 1. Extracción de la carga útil del formulario
-    descripcion = request.form.get('descripcion')
-    fecha = request.form.get('fecha')
-    hora = request.form.get('hora')
+    nombre      = request.form.get('nombre', '').strip()
+    descripcion = request.form.get('descripcion', '').strip()
+    tipo        = request.form.get('tipo', 'otro')
+    fecha       = request.form.get('fecha')
+    hora        = request.form.get('hora')
+    notas       = request.form.get('notas', '').strip()
 
     # 2. Validación de reglas de negocio: Detección de colisiones
     for cita in citas:
@@ -29,15 +32,30 @@ def agendar():
 
     # 3. Escritura de datos (Ruta de éxito)
     nueva_cita = {
-        "fecha": fecha,
-        "hora": hora,
-        "descripcion": descripcion
+        "nombre":      nombre,
+        "descripcion": descripcion,
+        "tipo":        tipo,
+        "fecha":       fecha,
+        "hora":        hora,
+        "notas":       notas
     }
     # Ordenar la lista cronológicamente sería ideal, pero por ahora solo anexamos
     citas.append(nueva_cita)
     
-    # Notificación de éxito
-    flash("Cita registrada correctamente en el sistema.", "success")
+    # Notificación de éxito — ordenar la lista cronológicamente
+    citas.sort(key=lambda c: (c['fecha'], c['hora']))
+    flash(f"Cita de {nombre} registrada correctamente.", "success")
+    return redirect(url_for('index'))
+
+
+@app.route('/eliminar/<int:index>', methods=['POST'])
+def eliminar(index):
+    """Elimina una cita por su posición en la lista."""
+    if 0 <= index < len(citas):
+        eliminada = citas.pop(index)
+        flash(f"Cita de {eliminada['nombre']} eliminada.", "success")
+    else:
+        flash("No se encontró la cita a eliminar.", "error")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
