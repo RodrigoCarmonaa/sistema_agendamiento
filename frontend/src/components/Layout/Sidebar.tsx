@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Calendar, ClipboardList,
   Briefcase, Settings, LogOut, CalendarCheck,
@@ -17,9 +18,11 @@ const navItems = [
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleLogout = () => {
     logout();
+    queryClient.clear(); // Limpiar todo el caché de React Query
     toast.success('Sesión cerrada');
     navigate('/login');
   };

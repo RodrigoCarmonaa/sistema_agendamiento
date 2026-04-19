@@ -12,38 +12,43 @@ router = APIRouter()
 
 
 @router.get("/stats")
-def get_stats(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
 
-    total = db.query(func.count(Cita.id)).scalar() or 0
+    total = db.query(func.count(Cita.id)).filter(Cita.usuario_id == current_user.id).scalar() or 0
 
     hoy = (
         db.query(func.count(Cita.id))
+        .filter(Cita.usuario_id == current_user.id)
         .filter(func.date(Cita.fecha_hora_inicio) == today)
         .scalar() or 0
     )
 
     semana = (
         db.query(func.count(Cita.id))
+        .filter(Cita.usuario_id == current_user.id)
         .filter(func.date(Cita.fecha_hora_inicio) >= week_start)
         .scalar() or 0
     )
 
     completadas = (
         db.query(func.count(Cita.id))
+        .filter(Cita.usuario_id == current_user.id)
         .filter(Cita.estado == EstadoCita.completada)
         .scalar() or 0
     )
 
     pendientes = (
         db.query(func.count(Cita.id))
+        .filter(Cita.usuario_id == current_user.id)
         .filter(Cita.estado == EstadoCita.pendiente)
         .scalar() or 0
     )
 
     confirmadas = (
         db.query(func.count(Cita.id))
+        .filter(Cita.usuario_id == current_user.id)
         .filter(Cita.estado == EstadoCita.confirmada)
         .scalar() or 0
     )
@@ -55,6 +60,7 @@ def get_stats(db: Session = Depends(get_db), _: User = Depends(get_current_user)
         d = today - timedelta(days=i)
         count = (
             db.query(func.count(Cita.id))
+            .filter(Cita.usuario_id == current_user.id)
             .filter(func.date(Cita.fecha_hora_inicio) == d)
             .scalar() or 0
         )

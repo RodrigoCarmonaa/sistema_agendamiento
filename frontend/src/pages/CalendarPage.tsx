@@ -40,6 +40,7 @@ export default function CalendarPage() {
   const [modal, setModal] = useState<'create' | 'view' | null>(null);
   const [selected, setSelected] = useState<Cita | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [isFromCalendar, setIsFromCalendar] = useState(false);
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
 
   const { data: citas = [] } = useQuery<Cita[]>({
@@ -55,7 +56,7 @@ export default function CalendarPage() {
 
   const createMut = useMutation({
     mutationFn: (data: object) => citasApi.create(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['citas'] }); qc.invalidateQueries({ queryKey: ['dashboard-stats'] }); toast.success('Cita creada'); setModal(null); setForm({ ...EMPTY_FORM }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['citas'] }); qc.invalidateQueries({ queryKey: ['dashboard-stats'] }); toast.success('Cita creada'); setModal(null); setIsFromCalendar(false); setForm({ ...EMPTY_FORM }); },
     onError: (e: any) => toast.error(e.response?.data?.detail ?? 'Error'),
   });
 
@@ -81,6 +82,7 @@ export default function CalendarPage() {
     const dt = slot.start;
     const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     setForm({ ...EMPTY_FORM, fecha_hora_inicio: local });
+    setIsFromCalendar(true);
     setModal('create');
   }, []);
 
@@ -119,7 +121,7 @@ export default function CalendarPage() {
           <h1 className="page-title">Calendario</h1>
           <p className="page-subtitle">Haz clic en un día para crear una cita</p>
         </div>
-        <button className="btn btn-primary" id="new-cita-btn" onClick={() => { setForm({ ...EMPTY_FORM }); setModal('create'); }}>
+        <button className="btn btn-primary" id="new-cita-btn" onClick={() => { setForm({ ...EMPTY_FORM }); setIsFromCalendar(false); setModal('create'); }}>
           <Plus size={16} /> Nueva cita
         </button>
       </div>
@@ -143,11 +145,11 @@ export default function CalendarPage() {
       </div>
 
       {modal === 'create' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
+        <div className="modal-overlay" onClick={() => { setModal(null); setIsFromCalendar(false); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
             <div className="modal-header">
               <h3 className="modal-title">Nueva cita</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setModal(null)}><X size={18} /></button>
+              <button className="btn btn-ghost btn-icon" onClick={() => { setModal(null); setIsFromCalendar(false); }}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -165,16 +167,48 @@ export default function CalendarPage() {
                   <label className="form-label">Correo</label>
                   <input type="email" className="form-input" value={form.email_cliente} onChange={(e) => setForm((f) => ({ ...f, email_cliente: e.target.value }))} placeholder="cliente@mail.com" />
                 </div>
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Inicio *</label>
-                    <input type="datetime-local" className="form-input" required value={form.fecha_hora_inicio} onChange={(e) => setForm((f) => ({ ...f, fecha_hora_inicio: e.target.value }))} />
+                
+                {isFromCalendar ? (
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Hora inicio *</label>
+                      <input 
+                        type="time" 
+                        className="form-input" 
+                        required 
+                        value={form.fecha_hora_inicio.slice(11, 16)} 
+                        onChange={(e) => {
+                          const dateStr = form.fecha_hora_inicio.slice(0, 10);
+                          setForm((f) => ({ ...f, fecha_hora_inicio: `${dateStr}T${e.target.value}` }));
+                        }} 
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Hora fin</label>
+                      <input 
+                        type="time" 
+                        className="form-input" 
+                        value={form.fecha_hora_fin ? form.fecha_hora_fin.slice(11, 16) : ''} 
+                        onChange={(e) => {
+                          const dateStr = form.fecha_hora_inicio.slice(0, 10);
+                          setForm((f) => ({ ...f, fecha_hora_fin: e.target.value ? `${dateStr}T${e.target.value}` : '' }));
+                        }} 
+                      />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Fin</label>
-                    <input type="datetime-local" className="form-input" value={form.fecha_hora_fin} onChange={(e) => setForm((f) => ({ ...f, fecha_hora_fin: e.target.value }))} />
+                ) : (
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Inicio *</label>
+                      <input type="datetime-local" className="form-input" required value={form.fecha_hora_inicio} onChange={(e) => setForm((f) => ({ ...f, fecha_hora_inicio: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Fin</label>
+                      <input type="datetime-local" className="form-input" value={form.fecha_hora_fin} onChange={(e) => setForm((f) => ({ ...f, fecha_hora_fin: e.target.value }))} />
+                    </div>
                   </div>
-                </div>
+                )}
+                
                 <div className="form-group">
                   <label className="form-label">Servicio</label>
                   <select className="form-input" value={form.servicio_id} onChange={(e) => setForm((f) => ({ ...f, servicio_id: e.target.value }))}>
@@ -188,7 +222,7 @@ export default function CalendarPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancelar</button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setModal(null); setIsFromCalendar(false); }}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={createMut.isPending}>
                   {createMut.isPending ? <div className="spinner" /> : <><Save size={15} /> Guardar cita</>}
                 </button>
